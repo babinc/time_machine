@@ -1,16 +1,16 @@
 use libc::{suseconds_t, time_t, timeval, timezone};
 use std::mem::zeroed;
-use chrono::{TimeZone, DateTime, Local, NaiveTime, NaiveDate, Utc, Timelike, Datelike, NaiveDateTime, FixedOffset, Offset, Weekday};
+use chrono::{TimeZone, DateTime, Local, NaiveTime, NaiveDate, Utc, Datelike, NaiveDateTime};
 use chrono_tz::America::Chicago;
 use std::error::Error;
-use std::{env, ptr};
+use std::{env};
 
 //sudo setcap CAP_SYS_TIME+ep ./time_machine
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
-    parse_arguments(&args);
+    parse_arguments(&args)?;
 
     Ok(())
 }
@@ -22,9 +22,8 @@ fn parse_arguments(args: &Vec<String>) -> Result<(), Box<dyn Error>> {
 
     if args.contains(&TIME_ARGUMENT.to_string()) == true {
         let index = args.iter().position(|r| r == &TIME_ARGUMENT.to_string()).unwrap();
-        println!("Time Argument Found");
         if args.len() > index + 1 {
-            set_time_with_time_argument(args[index + 1].as_str());
+            set_time_with_time_argument(args[index + 1].as_str())?;
         }
         else {
             eprintln!("Error: missing time parameter");
@@ -47,7 +46,7 @@ fn parse_arguments(args: &Vec<String>) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn set_time_with_time_argument(time_arg: &str) {
+fn set_time_with_time_argument(time_arg: &str) -> Result<(), Box<dyn Error>> {
     let parsed_time = parse_time(time_arg)?;
     let now = Utc::now();
 
@@ -55,7 +54,13 @@ fn set_time_with_time_argument(time_arg: &str) {
     let date_time = NaiveDateTime::new(date, parsed_time);
 
     let tz_aware = Chicago.from_local_datetime(&date_time).unwrap();
-    set_system_time(tz_aware);
+
+    match set_system_time(tz_aware) {
+        Ok(_) => println!("Time Successfully Set"),
+        Err(e) => eprintln!("Error settimeofday: {}", e.to_string())
+    };
+
+    Ok(())
 }
 
 fn parse_time(time: &str) -> Result<NaiveTime, Box<dyn Error>> {
@@ -70,7 +75,7 @@ fn parse_time(time: &str) -> Result<NaiveTime, Box<dyn Error>> {
     Ok(parsed_time)
 }
 
-fn set_system_time<Tz: TimeZone>(t: DateTime<Tz>) {
+fn set_system_time<Tz: TimeZone>(t: DateTime<Tz>) -> Result<(), i32> {
     let date_time = t.with_timezone(&Local);
     let mut time_value: timeval = unsafe { zeroed() };
 
@@ -80,7 +85,11 @@ fn set_system_time<Tz: TimeZone>(t: DateTime<Tz>) {
     unsafe {
         let mock_tz: *const timezone = std::ptr::null();
         let i = libc::settimeofday(&time_value as *const timeval, mock_tz);
-        println!("output: {}", i);
+        return if i == 0 {
+            Ok(())
+        } else {
+            Err(i)
+        }
     }
 }
 
@@ -92,17 +101,17 @@ fn display_usage() {
     println!("Author: Carman Babin");
     println!();
     println!("USAGE:");
-    println!("    tm [OPTION] <ARGUMENT>");
+    println!("    tm <ARGUMENT> [OPTION]");
     println!();
     println!("FLAGS:");
-    println!("    -h\t\t\tPrints help information");
-    println!("    -v\t\t\tPrints version information");
+    println!("    -h\t\tPrints help information");
+    println!("    -v\t\tPrints version information");
     println!();
     println!("OPTIONS:");
-    println!("    -t <Time>\t\texample: 5:30:pm");
+    println!("    -t <Time>\texample: 5:30:pm");
     println!();
     println!("EXAMPLES:");
-    println!("    tm -t 5:30:pm");
+    println!("    time_machine -t 5:30:pm");
     println!();
 }
 

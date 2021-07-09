@@ -1,7 +1,7 @@
 use chrono_tz::{Tz};
 use std::error::Error;
 use std::io::ErrorKind;
-use chrono::{TimeZone, DateTime, Local, Utc, NaiveDate, NaiveDateTime, Datelike, NaiveTime, Timelike};
+use chrono::{TimeZone, DateTime, Local, Utc, NaiveDate, NaiveDateTime, Datelike, NaiveTime};
 use std::mem::zeroed;
 use libc::{suseconds_t, time_t, timeval, timezone};
 
@@ -157,19 +157,4 @@ impl App {
         let version = env!("CARGO_PKG_VERSION");
         println!("v: {}", version);
     }
-}
-
-fn convert_from_unix(unix_time: i64) -> NaiveDateTime {
-    let unix_str = unix_time.to_string();
-    let epoch_seconds;
-    if unix_str.len() > 10 {
-        let epoch_str = &unix_time.to_string()[..10];
-        epoch_seconds = epoch_str.parse::<i64>().unwrap();
-    }
-    else {
-        epoch_seconds = unix_time;
-    }
-    let naive_datetime = NaiveDateTime::from_timestamp(epoch_seconds, 0);
-
-    naive_datetime
 }

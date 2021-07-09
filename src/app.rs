@@ -72,14 +72,6 @@ impl App {
 
     fn reset_time_using_ntp(&self) -> Result<(), Box<dyn Error>> {
         let ntp_result = sntpc::request("pool.ntp.org", 123)?;
-
-        println!("NTP server time: {}.{}, Offset: {}", ntp_result.sec, ntp_result.nsec, ntp_result.offset);
-
-        let datetime = convert_from_unix(ntp_result.sec as i64);
-
-        println!("hour: {}", datetime.hour());
-        println!("minute: {}", datetime.minute());
-
         let dt = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(ntp_result.sec as i64, ntp_result.nsec), Utc);
 
         match App::change_system_time(dt) {

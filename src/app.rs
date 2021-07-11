@@ -6,29 +6,29 @@ use std::mem::zeroed;
 use libc::{suseconds_t, time_t, timeval, timezone};
 
 pub struct App {
+    time_zone_str: String,
     tz: Tz
 }
 
 impl App {
     pub fn new() -> Result<Self, Box<dyn Error>> {
-        let local_time_zone = match datetime::sys_timezone() {
+        let time_zone_str = match datetime::sys_timezone() {
             None => {
                 return Err(Box::new(std::io::Error::new(ErrorKind::Other, "Could not figure out local timezone")));
             }
             Some(res) => res
         };
 
-        println!("Using {} for time zone", local_time_zone);
-
-        let tz: chrono_tz::Tz = match local_time_zone.parse() {
+        let tz: chrono_tz::Tz = match time_zone_str.parse() {
             Ok(res) => res,
             Err(e) => {
-                let error = format!("Could not parse timezone: {}, Error: {}", local_time_zone, e.to_string());
+                let error = format!("Could not parse timezone: {}, Error: {}", time_zone_str, e.to_string());
                 return Err(Box::new(std::io::Error::new(ErrorKind::Other, error)));
             }
         };
 
         let app = App {
+            time_zone_str,
             tz
         };
 
@@ -83,6 +83,7 @@ impl App {
     }
 
     fn change_time_with_time_argument(&self, time_arg: &str) -> Result<(), Box<dyn Error>> {
+        println!("Using {} for time zone", self.time_zone_str);
         let parsed_time = App::parse_human_time(time_arg)?;
         let now = Utc::now();
 
@@ -132,20 +133,18 @@ impl App {
     fn display_usage() {
         let version = env!("CARGO_PKG_VERSION");
 
-        println!("Time Management Tool");
+        println!("Time Machine");
         println!("Version: {}", version);
         println!("Author: Carman Babin");
         println!();
         println!("USAGE:");
-        println!("    tm <ARGUMENT> [OPTION]");
+        println!("    time_machine <ARGUMENT> [OPTION]");
         println!();
-        println!("FLAGS:");
-        println!("    -h\t\tPrints help information");
-        println!("    -v\t\tPrints version information");
-        println!();
-        println!("OPTIONS:");
-        println!("    -t <Time>\texample: 5:30:pm");
-        println!("    -r\tResets time using web api");
+        println!("ARGUMENTS:");
+        println!("    -h\t\t\tPrints help information");
+        println!("    -v\t\t\tPrints version information");
+        println!("    -t [time]\texample: 8:05:am");
+        println!("    -r\t\t\tReset time using NTP server");
         println!();
         println!("EXAMPLES:");
         println!("    time_machine -t 5:30:pm");

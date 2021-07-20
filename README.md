@@ -1,8 +1,8 @@
 # time_machine
-Easy way to change sytem time on linux and reset back to the correct time using NTP.
+Easy way to change sytem time on linux and reset back to the correct time using NTP while automatically resolving timezones.
 
 ## Description
-I needed a quick and easy way to change time on linux in order to run integration test for another project. 
+I needed a quick and easy way to change time on linux in order to run integration test for another project. Be sure and disable your local systems NTP service or as in Ubuntu "Automatic Time Zone".
 
 ## Install
 ```sh
